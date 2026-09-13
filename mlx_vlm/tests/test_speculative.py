@@ -210,6 +210,44 @@ class TransactionTarget:
         raise AssertionError("transactions must own cache commit")
 
 
+def test_mtp_token_controls_truncate_at_budget_boundary():
+    accepted = [3, 2]
+    new_tokens = [[10, 11, 12, 13], [20, 21, 22]]
+    observed = []
+
+    def observe(row, token):
+        observed.append((row, token))
+        return row == 7 and token == 11
+
+    mtp_utils._apply_mtp_token_controls(
+        accepted,
+        new_tokens,
+        active_idx=[7, 9],
+        forced_tokens=[None, None],
+        token_observer=observe,
+    )
+
+    assert observed == [(7, 10), (7, 11), (9, 20), (9, 21), (9, 22)]
+    assert accepted == [1, 2]
+    assert new_tokens == [[10, 11], [20, 21, 22]]
+
+
+def test_mtp_token_controls_replace_next_target_with_forced_token():
+    accepted = [2]
+    new_tokens = [[10, 11, 12]]
+
+    mtp_utils._apply_mtp_token_controls(
+        accepted,
+        new_tokens,
+        active_idx=[0],
+        forced_tokens=[99],
+        token_observer=lambda row, token: False,
+    )
+
+    assert accepted == [0]
+    assert new_tokens == [[99]]
+
+
 class TransactionDrafter:
     prefer_requested_block_size = True
 
