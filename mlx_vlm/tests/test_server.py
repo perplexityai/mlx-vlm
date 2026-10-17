@@ -758,6 +758,37 @@ def _generator(**overrides):
     return gen
 
 
+def _unstarted_response_generator():
+    gen = server.ResponseGenerator.__new__(server.ResponseGenerator)
+    gen.model_path = "demo"
+    gen.adapter_path = None
+    gen.model = None
+    gen.processor = None
+    gen.config = None
+    gen.stop_tokens = set()
+    gen.vision_cache = None
+    gen.draft_model = None
+    gen.draft_kind = None
+    gen.draft_model_path = None
+    gen.draft_kind_override = None
+    gen.kv_bits = None
+    gen.kv_group_size = server.DEFAULT_KV_GROUP_SIZE
+    gen.kv_quant_scheme = server.DEFAULT_KV_QUANT_SCHEME
+    gen.quantized_kv_start = server.DEFAULT_QUANTIZED_KV_START
+    gen.top_logprobs_k = 0
+    gen.apc_manager = None
+    gen.apc_mode = None
+    gen.tokenizer = None
+    gen.requests = Queue()
+    gen._stop = False
+    gen._ready = Event()
+    gen._load_error = None
+    gen._cancelled = set()
+    gen._cancel_lock = Lock()
+    return gen
+
+
+
 def test_server_allows_thinking_budget_for_mtp_only():
     queued = []
     criteria = object()
