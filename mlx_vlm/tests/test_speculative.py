@@ -40,6 +40,7 @@ from mlx_vlm.tests.test_models import (
     tiny_config,
 )
 from mlx_vlm.utils import get_model_and_args
+import mlx_vlm.speculative.mtp as mtp_utils
 
 parametrize = pytest.mark.parametrize
 DATA = json.loads(Path(__file__).with_name("model_cases.json").read_text())[
