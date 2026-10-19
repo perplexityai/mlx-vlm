@@ -1,0 +1,50 @@
+# Builds the wheel the Perplexity Mac app installs and attaches it to a GitHub release.
+# Each fork release gets a new 0.7.4.postN version; never delete or re-upload a release,
+# because the app's lockfile pins the wheel's hash.
+
+name: Release wheel
+
+on:
+  push:
+    tags:
+      - "v*.post*"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check that the tag matches the package version
+        run: |
+          version="$(python -c 'import runpy; print(runpy.run_path("mlx_vlm/version.py")["__version__"])')"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match version $version"
+            exit 1
+          fi
+
+      - name: Build wheel
+        run: |
+          python -m pip install build
+          python -m build --wheel
+          cd dist && sha256sum *.whl > SHA256SUMS && cat SHA256SUMS
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh release create "$GITHUB_REF_NAME" dist/*.whl dist/SHA256SUMS
+          --repo "$GITHUB_REPOSITORY"
+          --title "$GITHUB_REF_NAME"
+          --notes "mlx-vlm for the Perplexity Mac app, built from $GITHUB_SHA."
